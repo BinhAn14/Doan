@@ -14,12 +14,15 @@ router.post("/", async (req, res) => {
       category_id = null,
       image_url = "",
     } = req.body;
+
     const pool = await getPool();
     const [result] = await pool.execute(
-      `INSERT INTO products (product_name, description, price, stock, category_id, image_url, created_at, updated_at)
+      `INSERT INTO products 
+       (product_name, description, price, stock, category_id, image_url, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [product_name, description, price, stock, category_id, image_url]
     );
+
     res.status(201).json({ message: "Created", id: result.insertId });
   } catch (err) {
     console.error("POST /api/products error:", err);
@@ -31,7 +34,12 @@ router.post("/", async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     const { q, page = 1, limit = 10, minPrice, maxPrice, category } = req.query;
-    const offset = (Number(page) - 1) * Number(limit);
+
+    // Ép kiểu số nguyên và đặt default
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
+    const offsetNum = (pageNum - 1) * limitNum;
+
     const pool = await getPool();
 
     let where = [];
@@ -43,11 +51,11 @@ router.get("/", async (req, res) => {
     }
     if (minPrice) {
       where.push("price >= ?");
-      params.push(minPrice);
+      params.push(Number(minPrice));
     }
     if (maxPrice) {
       where.push("price <= ?");
-      params.push(maxPrice);
+      params.push(Number(maxPrice));
     }
     if (category) {
       where.push("category_id = ?");
@@ -66,15 +74,15 @@ router.get("/", async (req, res) => {
     // data
     const [rows] = await pool.execute(
       `SELECT * FROM products ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [...params, Number(limit), Number(offset)]
+      [...params, limitNum, offsetNum]
     );
 
     res.json({
       data: rows,
-      page: Number(page),
-      limit: Number(limit),
+      page: pageNum,
+      limit: limitNum,
       total,
-      totalPages: Math.ceil(total / Number(limit)),
+      totalPages: Math.ceil(total / limitNum),
     });
   } catch (err) {
     console.error("GET /api/products error:", err);
@@ -82,7 +90,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Get one
+// Get one product
 router.get("/:id", async (req, res) => {
   try {
     const pool = await getPool();
@@ -90,6 +98,7 @@ router.get("/:id", async (req, res) => {
       "SELECT * FROM products WHERE product_id = ?",
       [req.params.id]
     );
+
     if (!rows.length) return res.status(404).json({ error: "Not found" });
     res.json(rows[0]);
   } catch (err) {
@@ -98,14 +107,16 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Update
+// Update product
 router.put("/:id", async (req, res) => {
   try {
     const { product_name, description, price, stock, category_id, image_url } =
       req.body;
+
     const pool = await getPool();
     const [result] = await pool.execute(
-      `UPDATE products SET product_name=?, description=?, price=?, stock=?, category_id=?, image_url=?, updated_at=NOW() WHERE product_id=?`,
+      `UPDATE products SET product_name=?, description=?, price=?, stock=?, category_id=?, image_url=?, updated_at=NOW() 
+       WHERE product_id=?`,
       [
         product_name,
         description,
@@ -116,8 +127,10 @@ router.put("/:id", async (req, res) => {
         req.params.id,
       ]
     );
+
     if (result.affectedRows === 0)
       return res.status(404).json({ error: "Not found" });
+
     res.json({ message: "Updated" });
   } catch (err) {
     console.error("PUT /api/products/:id error:", err);
@@ -125,7 +138,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// Delete
+// Delete product
 router.delete("/:id", async (req, res) => {
   try {
     const pool = await getPool();
@@ -133,8 +146,10 @@ router.delete("/:id", async (req, res) => {
       "DELETE FROM products WHERE product_id=?",
       [req.params.id]
     );
+
     if (result.affectedRows === 0)
       return res.status(404).json({ error: "Not found" });
+
     res.json({ message: "Deleted" });
   } catch (err) {
     console.error("DELETE /api/products/:id error:", err);
