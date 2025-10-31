@@ -35,9 +35,9 @@ router.get("/", async (req, res) => {
   try {
     const { q, page = 1, limit = 10, minPrice, maxPrice, category } = req.query;
 
-    // Ép kiểu số nguyên và đặt default
-    const pageNum = parseInt(page, 10) || 1;
-    const limitNum = parseInt(limit, 10) || 10;
+    // Ép kiểu số và gán giá trị mặc định an toàn
+    const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+    const limitNum = Math.max(parseInt(limit, 10) || 10, 1);
     const offsetNum = (pageNum - 1) * limitNum;
 
     const pool = await getPool();
@@ -59,23 +59,33 @@ router.get("/", async (req, res) => {
     }
     if (category) {
       where.push("category_id = ?");
-      params.push(category);
+      params.push(Number(category));
     }
 
     const whereClause = where.length ? "WHERE " + where.join(" AND ") : "";
 
-    // total count
+    // Đếm tổng số bản ghi
     const [countRows] = await pool.execute(
-      `SELECT COUNT(*) as total FROM products ${whereClause}`,
+      `SELECT COUNT(*) AS total FROM products ${whereClause}`,
       params
     );
     const total = countRows[0].total;
 
-    // data
-    const [rows] = await pool.execute(
-      `SELECT * FROM products ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      [...params, limitNum, offsetNum]
-    );
+    // Câu truy vấn chính (thêm LIMIT/OFFSET nếu hợp lệ)
+    let sql = `SELECT * FROM products ${whereClause} ORDER BY created_at DESC`;
+    const sqlParams = [...params];
+
+    if (!isNaN(limitNum) && !isNaN(offsetNum)) {
+      sql += " LIMIT ? OFFSET ?";
+      sqlParams.push(limitNum, offsetNum);
+    }
+
+    // Gỡ lỗi: In ra câu SQL và params nếu cần
+    console.log("📄 SQL:", sql);
+    console.log("📦 Params:", sqlParams);
+
+    // Thực thi truy vấn
+    const [rows] = await pool.execute(sql, sqlParams);
 
     res.json({
       data: rows,
