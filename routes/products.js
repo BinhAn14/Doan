@@ -1,9 +1,8 @@
-// routes/products.js
 const express = require("express");
 const router = express.Router();
 const { getPool } = require("../db");
 
-// Create product
+// 🟩 CREATE product
 router.post("/", async (req, res) => {
   try {
     const {
@@ -30,16 +29,19 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Get list (search + filters + pagination)
+// 🟦 READ list (with search, filters & pagination)
 router.get("/", async (req, res) => {
   try {
     const { q, page = 1, limit = 10, minPrice, maxPrice, category } = req.query;
 
-    // Ép kiểu số và gán giá trị mặc định an toàn
-    const pageNum = Math.max(parseInt(page, 10) || 1, 1);
-    const limitNum = Math.max(parseInt(limit, 10) || 10, 1);
-    const offsetNum = (pageNum - 1) * limitNum;
+    // ✅ Safe integer parsing
+    let pageNum = parseInt(page, 10);
+    if (isNaN(pageNum) || pageNum < 1) pageNum = 1;
 
+    let limitNum = parseInt(limit, 10);
+    if (isNaN(limitNum) || limitNum < 1) limitNum = 10;
+
+    const offsetNum = (pageNum - 1) * limitNum;
     const pool = await getPool();
 
     let where = [];
@@ -64,28 +66,25 @@ router.get("/", async (req, res) => {
 
     const whereClause = where.length ? "WHERE " + where.join(" AND ") : "";
 
-    // Đếm tổng số bản ghi
+    // Count total
     const [countRows] = await pool.execute(
       `SELECT COUNT(*) AS total FROM products ${whereClause}`,
       params
     );
     const total = countRows[0].total;
 
-    // Câu truy vấn chính (thêm LIMIT/OFFSET nếu hợp lệ)
-    let sql = `SELECT * FROM products ${whereClause} ORDER BY created_at DESC`;
-    const sqlParams = [...params];
+    // ✅ Main query (compatible with Railway MySQL)
+    const sql = `
+      SELECT * FROM products
+      ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT ${limitNum} OFFSET ${offsetNum}
+    `;
 
-    if (!isNaN(limitNum) && !isNaN(offsetNum)) {
-      sql += " LIMIT ? OFFSET ?";
-      sqlParams.push(limitNum, offsetNum);
-    }
-
-    // Gỡ lỗi: In ra câu SQL và params nếu cần
     console.log("📄 SQL:", sql);
-    console.log("📦 Params:", sqlParams);
+    console.log("📦 Params:", params);
 
-    // Thực thi truy vấn
-    const [rows] = await pool.execute(sql, sqlParams);
+    const [rows] = await pool.execute(sql, params);
 
     res.json({
       data: rows,
@@ -100,7 +99,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Get one product
+// 🟨 READ one product
 router.get("/:id", async (req, res) => {
   try {
     const pool = await getPool();
@@ -117,7 +116,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Update product
+// 🟧 UPDATE product
 router.put("/:id", async (req, res) => {
   try {
     const { product_name, description, price, stock, category_id, image_url } =
@@ -125,7 +124,8 @@ router.put("/:id", async (req, res) => {
 
     const pool = await getPool();
     const [result] = await pool.execute(
-      `UPDATE products SET product_name=?, description=?, price=?, stock=?, category_id=?, image_url=?, updated_at=NOW() 
+      `UPDATE products 
+       SET product_name=?, description=?, price=?, stock=?, category_id=?, image_url=?, updated_at=NOW()
        WHERE product_id=?`,
       [
         product_name,
@@ -148,7 +148,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// Delete product
+// 🟥 DELETE product
 router.delete("/:id", async (req, res) => {
   try {
     const pool = await getPool();
