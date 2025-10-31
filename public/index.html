@@ -9,7 +9,7 @@
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         max-width: 1000px;
         margin: 20px auto;
-        background-color: #f9f9f9;
+        background: #f9f9f9;
         color: #333;
       }
       h1,
@@ -20,7 +20,7 @@
       form,
       .search-container,
       table {
-        background-color: #fff;
+        background: #fff;
         padding: 20px;
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -39,19 +39,19 @@
       }
       button {
         cursor: pointer;
-        background-color: #3498db;
+        background: #3498db;
         color: #fff;
         border: none;
         transition: 0.2s;
       }
       button:hover {
-        background-color: #2980b9;
+        background: #2980b9;
       }
       button.delete-btn {
-        background-color: #e74c3c;
+        background: #e74c3c;
       }
       button.delete-btn:hover {
-        background-color: #c0392b;
+        background: #c0392b;
       }
       label {
         font-weight: bold;
@@ -69,11 +69,11 @@
         text-align: center;
       }
       th {
-        background-color: #2c3e50;
+        background: #2c3e50;
         color: #fff;
       }
       tr:nth-child(even) {
-        background-color: #f2f2f2;
+        background: #f2f2f2;
       }
       img {
         border-radius: 4px;
@@ -156,6 +156,7 @@
       let currentPage = 1;
       const limit = 5;
 
+      // Lấy dữ liệu sản phẩm
       async function fetchProducts(
         q = "",
         minPrice = "",
@@ -169,31 +170,29 @@
         return res.json();
       }
 
+      // Hiển thị danh sách sản phẩm
       function renderProducts(products) {
         const tbody = document.querySelector("#products-table tbody");
         tbody.innerHTML = "";
         for (const p of products) {
           const tr = document.createElement("tr");
           tr.innerHTML = `
-            <td>${p.product_id}</td>
-            <td>${p.product_name}</td>
-            <td>${p.description}</td>
-            <td>${p.price}</td>
-            <td>${p.stock}</td>
-            <td>${
-              p.image_url ? `<img src="${p.image_url}" width="50"/>` : ""
-            }</td>
-            <td>
-              <button onclick="editProduct(${p.product_id})">Sửa</button>
-              <button class="delete-btn" onclick="deleteProduct(${
-                p.product_id
-              })">Xóa</button>
-            </td>
-          `;
+      <td>${p.id}</td>
+      <td>${p.name}</td>
+      <td>${p.description}</td>
+      <td>${p.price}</td>
+      <td>${p.stock ?? 0}</td>
+      <td>${p.image ? `<img src="${p.image}" width="50"/>` : ""}</td>
+      <td>
+        <button onclick="editProduct(${p.id})">Sửa</button>
+        <button class="delete-btn" onclick="deleteProduct(${p.id})">Xóa</button>
+      </td>
+    `;
           tbody.appendChild(tr);
         }
       }
 
+      // Phân trang
       function renderPagination(totalPages) {
         const container = document.getElementById("pagination");
         container.innerHTML = "";
@@ -209,6 +208,7 @@
         }
       }
 
+      // Load sản phẩm
       async function loadProducts() {
         const q = document.getElementById("search-query").value.trim();
         const minPrice = document.getElementById("minPrice").value;
@@ -218,19 +218,21 @@
         renderPagination(data.totalPages);
       }
 
+      // Sửa sản phẩm
       async function editProduct(id) {
         const res = await fetch(`${apiBase}/${id}`);
         if (!res.ok) return alert("Không tìm thấy sản phẩm");
         const p = await res.json();
-        document.getElementById("product_id").value = p.product_id;
-        document.getElementById("product_name").value = p.product_name;
+        document.getElementById("product_id").value = p.id;
+        document.getElementById("product_name").value = p.name;
         document.getElementById("description").value = p.description;
         document.getElementById("price").value = p.price;
-        document.getElementById("stock").value = p.stock;
-        document.getElementById("image_url").value = p.image_url;
+        document.getElementById("stock").value = p.stock ?? 0;
+        document.getElementById("image_url").value = p.image ?? "";
         window.scrollTo(0, 0);
       }
 
+      // Xóa sản phẩm
       async function deleteProduct(id) {
         if (!confirm("Bạn có chắc muốn xóa không?")) return;
         const res = await fetch(`${apiBase}/${id}`, { method: "DELETE" });
@@ -240,17 +242,18 @@
         } else alert("Xóa thất bại");
       }
 
+      // Thêm / Cập nhật sản phẩm
       document
         .getElementById("product-form")
         .addEventListener("submit", async (e) => {
           e.preventDefault();
           const id = document.getElementById("product_id").value;
           const payload = {
-            product_name: document.getElementById("product_name").value,
+            name: document.getElementById("product_name").value,
             description: document.getElementById("description").value,
             price: Number(document.getElementById("price").value),
             stock: Number(document.getElementById("stock").value),
-            image_url: document.getElementById("image_url").value,
+            image: document.getElementById("image_url").value,
           };
           let res;
           if (id) {
@@ -273,17 +276,20 @@
           } else alert("Lỗi khi lưu sản phẩm");
         });
 
+      // Đặt lại form
       document.getElementById("reset-btn").addEventListener("click", resetForm);
       function resetForm() {
         document.getElementById("product-form").reset();
         document.getElementById("product_id").value = "";
       }
 
+      // Tìm kiếm
       document.getElementById("search-btn").addEventListener("click", () => {
         currentPage = 1;
         loadProducts();
       });
 
+      // Load lần đầu
       loadProducts();
     </script>
   </body>
