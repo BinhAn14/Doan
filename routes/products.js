@@ -10,16 +10,15 @@ router.post("/", async (req, res) => {
       description,
       price = 0,
       stock = 0,
-      category_id = null,
       image_url = "",
     } = req.body;
 
     const pool = await getPool();
     const [result] = await pool.execute(
       `INSERT INTO products 
-       (product_name, description, price, stock, category_id, image_url, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-      [product_name, description, price, stock, category_id, image_url]
+       (product_name, description, price, stock, image_url, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+      [product_name, description, price, stock, image_url]
     );
 
     res.status(201).json({ message: "Created", id: result.insertId });
@@ -29,12 +28,11 @@ router.post("/", async (req, res) => {
   }
 });
 
-// 🟦 READ list (with search, filters & pagination)
+// 🟦 READ list (with search & pagination)
 router.get("/", async (req, res) => {
   try {
-    const { q, page = 1, limit = 10, minPrice, maxPrice, category } = req.query;
+    const { q, page = 1, limit = 10, minPrice, maxPrice } = req.query;
 
-    // ✅ Safe integer parsing
     let pageNum = parseInt(page, 10);
     if (isNaN(pageNum) || pageNum < 1) pageNum = 1;
 
@@ -59,10 +57,6 @@ router.get("/", async (req, res) => {
       where.push("price <= ?");
       params.push(Number(maxPrice));
     }
-    if (category) {
-      where.push("category_id = ?");
-      params.push(Number(category));
-    }
 
     const whereClause = where.length ? "WHERE " + where.join(" AND ") : "";
 
@@ -73,16 +67,12 @@ router.get("/", async (req, res) => {
     );
     const total = countRows[0].total;
 
-    // ✅ Main query (compatible with Railway MySQL)
     const sql = `
       SELECT * FROM products
       ${whereClause}
       ORDER BY created_at DESC
       LIMIT ${limitNum} OFFSET ${offsetNum}
     `;
-
-    console.log("📄 SQL:", sql);
-    console.log("📦 Params:", params);
 
     const [rows] = await pool.execute(sql, params);
 
@@ -119,23 +109,14 @@ router.get("/:id", async (req, res) => {
 // 🟧 UPDATE product
 router.put("/:id", async (req, res) => {
   try {
-    const { product_name, description, price, stock, category_id, image_url } =
-      req.body;
+    const { product_name, description, price, stock, image_url } = req.body;
 
     const pool = await getPool();
     const [result] = await pool.execute(
       `UPDATE products 
-       SET product_name=?, description=?, price=?, stock=?, category_id=?, image_url=?, updated_at=NOW()
+       SET product_name=?, description=?, price=?, stock=?, image_url=?, updated_at=NOW()
        WHERE product_id=?`,
-      [
-        product_name,
-        description,
-        price,
-        stock,
-        category_id,
-        image_url,
-        req.params.id,
-      ]
+      [product_name, description, price, stock, image_url, req.params.id]
     );
 
     if (result.affectedRows === 0)

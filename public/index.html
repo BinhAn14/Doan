@@ -1,105 +1,172 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Product Manager</title>
+    <title>Quản Lý Sản Phẩm</title>
     <style>
       body {
-        font-family: Arial, sans-serif;
-        max-width: 900px;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 1000px;
         margin: 20px auto;
+        background-color: #f9f9f9;
+        color: #333;
+      }
+      h1,
+      h2 {
+        text-align: center;
+        color: #2c3e50;
+      }
+      form,
+      .search-container,
+      table {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
       }
       input,
       button,
-      select,
       textarea {
-        padding: 6px;
+        padding: 8px;
         margin: 5px 0;
         width: 100%;
-        max-width: 300px;
+        max-width: 400px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+      }
+      button {
+        cursor: pointer;
+        background-color: #3498db;
+        color: #fff;
+        border: none;
+        transition: 0.2s;
+      }
+      button:hover {
+        background-color: #2980b9;
+      }
+      button.delete-btn {
+        background-color: #e74c3c;
+      }
+      button.delete-btn:hover {
+        background-color: #c0392b;
       }
       label {
         font-weight: bold;
+        display: block;
+        margin-top: 10px;
       }
       table {
-        border-collapse: collapse;
         width: 100%;
-        margin-top: 20px;
+        border-collapse: collapse;
       }
       th,
       td {
-        border: 1px solid #ccc;
-        padding: 8px;
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: center;
       }
       th {
-        background-color: #eee;
+        background-color: #2c3e50;
+        color: #fff;
+      }
+      tr:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+      img {
+        border-radius: 4px;
       }
       .flex-row {
         display: flex;
         gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
       }
-      .flex-row > * {
-        flex: 1;
+      .pagination {
+        display: flex;
+        gap: 5px;
+        justify-content: center;
+        margin-top: 10px;
+      }
+      .pagination button {
+        width: 40px;
+      }
+      @media (max-width: 600px) {
+        input,
+        button,
+        textarea {
+          max-width: 100%;
+        }
       }
     </style>
   </head>
   <body>
-    <h1>Product Manager</h1>
+    <h1>Quản Lý Sản Phẩm</h1>
 
-    <h2>Add / Edit Product</h2>
+    <h2>Thêm / Sửa Sản Phẩm</h2>
     <form id="product-form">
       <input type="hidden" id="product_id" />
-      <label for="product_name">Name</label>
+      <label for="product_name">Tên sản phẩm</label>
       <input id="product_name" required />
-      <label for="description">Description</label>
+      <label for="description">Mô tả</label>
       <textarea id="description" rows="2"></textarea>
-      <label for="price">Price</label>
+      <label for="price">Giá</label>
       <input id="price" type="number" min="0" step="0.01" value="0" />
-      <label for="stock">Stock</label>
+      <label for="stock">Số lượng</label>
       <input id="stock" type="number" min="0" value="0" />
-      <label for="category_id">Category ID</label>
-      <input id="category_id" type="number" />
-      <label for="image_url">Image URL</label>
+      <label for="image_url">URL hình ảnh</label>
       <input id="image_url" />
-      <button type="submit">Save Product</button>
-      <button type="button" id="reset-btn">Reset Form</button>
+      <div class="flex-row">
+        <button type="submit">Lưu sản phẩm</button>
+        <button type="button" id="reset-btn">Đặt lại</button>
+      </div>
     </form>
 
-    <h2>Search Products</h2>
-    <input
-      type="text"
-      id="search-query"
-      placeholder="Search name or description"
-    />
-    <button id="search-btn">Search</button>
+    <h2>Tìm kiếm & Lọc</h2>
+    <div class="search-container">
+      <div class="flex-row">
+        <input type="text" id="search-query" placeholder="Tên hoặc mô tả..." />
+        <input type="number" id="minPrice" placeholder="Giá từ" />
+        <input type="number" id="maxPrice" placeholder="Đến" />
+        <button id="search-btn">Tìm kiếm</button>
+      </div>
+    </div>
 
-    <h2>Product List</h2>
+    <h2>Danh sách sản phẩm</h2>
     <table id="products-table">
       <thead>
         <tr>
           <th>ID</th>
-          <th>Name</th>
-          <th>Description</th>
-          <th>Price</th>
-          <th>Stock</th>
-          <th>Category</th>
-          <th>Image</th>
-          <th>Actions</th>
+          <th>Tên</th>
+          <th>Mô tả</th>
+          <th>Giá</th>
+          <th>Số lượng</th>
+          <th>Hình ảnh</th>
+          <th>Hành động</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
+    <div class="pagination" id="pagination"></div>
 
     <script>
       const apiBase = "/api/products";
+      let currentPage = 1;
+      const limit = 5;
 
-      async function fetchProducts(q = "") {
-        const url = new URL(apiBase, window.location.origin);
-        if (q) url.searchParams.append("q", q);
-        const res = await fetch(url);
-        const data = await res.json();
-        return data.data;
+      async function fetchProducts(
+        q = "",
+        minPrice = "",
+        maxPrice = "",
+        page = 1
+      ) {
+        const params = new URLSearchParams({ q, page, limit });
+        if (minPrice) params.append("minPrice", minPrice);
+        if (maxPrice) params.append("maxPrice", maxPrice);
+        const res = await fetch(`${apiBase}?${params}`);
+        return res.json();
       }
 
       function renderProducts(products) {
@@ -108,55 +175,69 @@
         for (const p of products) {
           const tr = document.createElement("tr");
           tr.innerHTML = `
-          <td>${p.product_id}</td>
-          <td>${p.product_name}</td>
-          <td>${p.description}</td>
-          <td>${p.price}</td>
-          <td>${p.stock}</td>
-          <td>${p.category_id ?? ""}</td>
-          <td>${
-            p.image_url
-              ? `<img src="${p.image_url}" alt="img" width="50" />`
-              : ""
-          }</td>
-          <td>
-            <button onclick="editProduct(${p.product_id})">Edit</button>
-            <button onclick="deleteProduct(${p.product_id})">Delete</button>
-          </td>
-        `;
+            <td>${p.product_id}</td>
+            <td>${p.product_name}</td>
+            <td>${p.description}</td>
+            <td>${p.price}</td>
+            <td>${p.stock}</td>
+            <td>${
+              p.image_url ? `<img src="${p.image_url}" width="50"/>` : ""
+            }</td>
+            <td>
+              <button onclick="editProduct(${p.product_id})">Sửa</button>
+              <button class="delete-btn" onclick="deleteProduct(${
+                p.product_id
+              })">Xóa</button>
+            </td>
+          `;
           tbody.appendChild(tr);
+        }
+      }
+
+      function renderPagination(totalPages) {
+        const container = document.getElementById("pagination");
+        container.innerHTML = "";
+        for (let i = 1; i <= totalPages; i++) {
+          const btn = document.createElement("button");
+          btn.textContent = i;
+          btn.disabled = i === currentPage;
+          btn.onclick = () => {
+            currentPage = i;
+            loadProducts();
+          };
+          container.appendChild(btn);
         }
       }
 
       async function loadProducts() {
         const q = document.getElementById("search-query").value.trim();
-        const products = await fetchProducts(q);
-        renderProducts(products);
+        const minPrice = document.getElementById("minPrice").value;
+        const maxPrice = document.getElementById("maxPrice").value;
+        const data = await fetchProducts(q, minPrice, maxPrice, currentPage);
+        renderProducts(data.data);
+        renderPagination(data.totalPages);
       }
 
       async function editProduct(id) {
         const res = await fetch(`${apiBase}/${id}`);
-        if (!res.ok) return alert("Product not found");
+        if (!res.ok) return alert("Không tìm thấy sản phẩm");
         const p = await res.json();
         document.getElementById("product_id").value = p.product_id;
         document.getElementById("product_name").value = p.product_name;
         document.getElementById("description").value = p.description;
         document.getElementById("price").value = p.price;
         document.getElementById("stock").value = p.stock;
-        document.getElementById("category_id").value = p.category_id ?? "";
         document.getElementById("image_url").value = p.image_url;
         window.scrollTo(0, 0);
       }
 
       async function deleteProduct(id) {
-        if (!confirm("Are you sure to delete?")) return;
+        if (!confirm("Bạn có chắc muốn xóa không?")) return;
         const res = await fetch(`${apiBase}/${id}`, { method: "DELETE" });
         if (res.ok) {
-          alert("Deleted");
+          alert("Đã xóa");
           loadProducts();
-        } else {
-          alert("Delete failed");
-        }
+        } else alert("Xóa thất bại");
       }
 
       document
@@ -169,12 +250,8 @@
             description: document.getElementById("description").value,
             price: Number(document.getElementById("price").value),
             stock: Number(document.getElementById("stock").value),
-            category_id: document.getElementById("category_id").value
-              ? Number(document.getElementById("category_id").value)
-              : null,
             image_url: document.getElementById("image_url").value,
           };
-
           let res;
           if (id) {
             res = await fetch(`${apiBase}/${id}`, {
@@ -189,26 +266,23 @@
               body: JSON.stringify(payload),
             });
           }
-
           if (res.ok) {
-            alert(id ? "Updated" : "Created");
+            alert(id ? "Cập nhật thành công" : "Thêm thành công");
             resetForm();
             loadProducts();
-          } else {
-            alert("Error saving product");
-          }
+          } else alert("Lỗi khi lưu sản phẩm");
         });
 
       document.getElementById("reset-btn").addEventListener("click", resetForm);
-
       function resetForm() {
         document.getElementById("product-form").reset();
         document.getElementById("product_id").value = "";
       }
 
-      document
-        .getElementById("search-btn")
-        .addEventListener("click", loadProducts);
+      document.getElementById("search-btn").addEventListener("click", () => {
+        currentPage = 1;
+        loadProducts();
+      });
 
       loadProducts();
     </script>
