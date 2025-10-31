@@ -1,158 +1,91 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Quản Lý Sản Phẩm</title>
+    <title>Product Manager</title>
     <style>
       body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        max-width: 1000px;
+        font-family: Arial, sans-serif;
+        max-width: 900px;
         margin: 20px auto;
-        background-color: #f9f9f9;
-        color: #333;
       }
-
-      h1,
-      h2 {
-        text-align: center;
-        color: #2c3e50;
-      }
-
-      form,
-      .search-container,
-      table {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
-      }
-
       input,
       button,
       select,
       textarea {
-        padding: 8px;
+        padding: 6px;
         margin: 5px 0;
         width: 100%;
-        max-width: 400px;
-        border-radius: 4px;
-        border: 1px solid #ccc;
-        box-sizing: border-box;
+        max-width: 300px;
       }
-
-      button {
-        cursor: pointer;
-        background-color: #3498db;
-        color: #fff;
-        border: none;
-        transition: 0.2s;
-      }
-
-      button:hover {
-        background-color: #2980b9;
-      }
-
-      button.delete-btn {
-        background-color: #e74c3c;
-      }
-
-      button.delete-btn:hover {
-        background-color: #c0392b;
-      }
-
       label {
         font-weight: bold;
-        display: block;
-        margin-top: 10px;
       }
-
       table {
-        width: 100%;
         border-collapse: collapse;
+        width: 100%;
+        margin-top: 20px;
       }
-
       th,
       td {
-        border: 1px solid #ddd;
-        padding: 12px;
-        text-align: center;
+        border: 1px solid #ccc;
+        padding: 8px;
       }
-
       th {
-        background-color: #2c3e50;
-        color: #fff;
+        background-color: #eee;
       }
-
-      tr:nth-child(even) {
-        background-color: #f2f2f2;
-      }
-
-      img {
-        border-radius: 4px;
-      }
-
       .flex-row {
         display: flex;
         gap: 10px;
-        flex-wrap: wrap;
       }
-
-      @media (max-width: 600px) {
-        input,
-        button,
-        select,
-        textarea {
-          max-width: 100%;
-        }
+      .flex-row > * {
+        flex: 1;
       }
     </style>
   </head>
   <body>
-    <h1>Quản Lý Sản Phẩm</h1>
+    <h1>Product Manager</h1>
 
-    <h2>Thêm / Sửa Sản Phẩm</h2>
+    <h2>Add / Edit Product</h2>
     <form id="product-form">
       <input type="hidden" id="product_id" />
-      <label for="product_name">Tên sản phẩm</label>
+      <label for="product_name">Name</label>
       <input id="product_name" required />
-      <label for="description">Mô tả</label>
+      <label for="description">Description</label>
       <textarea id="description" rows="2"></textarea>
-      <label for="price">Giá</label>
+      <label for="price">Price</label>
       <input id="price" type="number" min="0" step="0.01" value="0" />
-      <label for="stock">Số lượng</label>
+      <label for="stock">Stock</label>
       <input id="stock" type="number" min="0" value="0" />
-      <label for="category_id">ID danh mục</label>
+      <label for="category_id">Category ID</label>
       <input id="category_id" type="number" />
-      <label for="image_url">URL hình ảnh</label>
+      <label for="image_url">Image URL</label>
       <input id="image_url" />
-      <div class="flex-row">
-        <button type="submit">Lưu sản phẩm</button>
-        <button type="button" id="reset-btn">Đặt lại</button>
-      </div>
+      <button type="submit">Save Product</button>
+      <button type="button" id="reset-btn">Reset Form</button>
     </form>
 
-    <h2>Tìm kiếm sản phẩm</h2>
-    <div class="search-container">
-      <div class="flex-row">
-        <input type="text" id="search-query" placeholder="Tên hoặc mô tả..." />
-        <button id="search-btn">Tìm kiếm</button>
-      </div>
-    </div>
+    <h2>Search Products</h2>
+    <input
+      type="text"
+      id="search-query"
+      placeholder="Search name or description"
+    />
+    <button id="search-btn">Search</button>
 
-    <h2>Danh sách sản phẩm</h2>
+    <h2>Product List</h2>
     <table id="products-table">
       <thead>
         <tr>
           <th>ID</th>
-          <th>Tên</th>
-          <th>Mô tả</th>
-          <th>Giá</th>
-          <th>Số lượng</th>
-          <th>Danh mục</th>
-          <th>Hình ảnh</th>
-          <th>Hành động</th>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Price</th>
+          <th>Stock</th>
+          <th>Category</th>
+          <th>Image</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -175,24 +108,22 @@
         for (const p of products) {
           const tr = document.createElement("tr");
           tr.innerHTML = `
-            <td>${p.product_id}</td>
-            <td>${p.product_name}</td>
-            <td>${p.description}</td>
-            <td>${p.price}</td>
-            <td>${p.stock}</td>
-            <td>${p.category_id ?? ""}</td>
-            <td>${
-              p.image_url
-                ? `<img src="${p.image_url}" alt="img" width="50" />`
-                : ""
-            }</td>
-            <td>
-              <button onclick="editProduct(${p.product_id})">Sửa</button>
-              <button class="delete-btn" onclick="deleteProduct(${
-                p.product_id
-              })">Xóa</button>
-            </td>
-          `;
+          <td>${p.product_id}</td>
+          <td>${p.product_name}</td>
+          <td>${p.description}</td>
+          <td>${p.price}</td>
+          <td>${p.stock}</td>
+          <td>${p.category_id ?? ""}</td>
+          <td>${
+            p.image_url
+              ? `<img src="${p.image_url}" alt="img" width="50" />`
+              : ""
+          }</td>
+          <td>
+            <button onclick="editProduct(${p.product_id})">Edit</button>
+            <button onclick="deleteProduct(${p.product_id})">Delete</button>
+          </td>
+        `;
           tbody.appendChild(tr);
         }
       }
@@ -205,7 +136,7 @@
 
       async function editProduct(id) {
         const res = await fetch(`${apiBase}/${id}`);
-        if (!res.ok) return alert("Không tìm thấy sản phẩm");
+        if (!res.ok) return alert("Product not found");
         const p = await res.json();
         document.getElementById("product_id").value = p.product_id;
         document.getElementById("product_name").value = p.product_name;
@@ -218,13 +149,13 @@
       }
 
       async function deleteProduct(id) {
-        if (!confirm("Bạn có chắc muốn xóa không?")) return;
+        if (!confirm("Are you sure to delete?")) return;
         const res = await fetch(`${apiBase}/${id}`, { method: "DELETE" });
         if (res.ok) {
-          alert("Đã xóa");
+          alert("Deleted");
           loadProducts();
         } else {
-          alert("Xóa thất bại");
+          alert("Delete failed");
         }
       }
 
@@ -260,11 +191,11 @@
           }
 
           if (res.ok) {
-            alert(id ? "Cập nhật thành công" : "Thêm thành công");
+            alert(id ? "Updated" : "Created");
             resetForm();
             loadProducts();
           } else {
-            alert("Lỗi khi lưu sản phẩm");
+            alert("Error saving product");
           }
         });
 
