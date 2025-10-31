@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Product Manager</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 900px;
+        margin: 20px auto;
+      }
+      input,
+      button,
+      select,
+      textarea {
+        padding: 6px;
+        margin: 5px 0;
+        width: 100%;
+        max-width: 300px;
+      }
+      label {
+        font-weight: bold;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 20px;
+      }
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 8px;
+      }
+      th {
+        background-color: #eee;
+      }
+      .flex-row {
+        display: flex;
+        gap: 10px;
+      }
+      .flex-row > * {
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Product Manager</h1>
+
+    <h2>Add / Edit Product</h2>
+    <form id="product-form">
+      <input type="hidden" id="product_id" />
+      <label for="product_name">Name</label>
+      <input id="product_name" required />
+      <label for="description">Description</label>
+      <textarea id="description" rows="2"></textarea>
+      <label for="price">Price</label>
+      <input id="price" type="number" min="0" step="0.01" value="0" />
+      <label for="stock">Stock</label>
+      <input id="stock" type="number" min="0" value="0" />
+      <label for="category_id">Category ID</label>
+      <input id="category_id" type="number" />
+      <label for="image_url">Image URL</label>
+      <input id="image_url" />
+      <button type="submit">Save Product</button>
+      <button type="button" id="reset-btn">Reset Form</button>
+    </form>
+
+    <h2>Search Products</h2>
+    <input
+      type="text"
+      id="search-query"
+      placeholder="Search name or description"
+    />
+    <button id="search-btn">Search</button>
+
+    <h2>Product List</h2>
+    <table id="products-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Price</th>
+          <th>Stock</th>
+          <th>Category</th>
+          <th>Image</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <script>
+      const apiBase = "/api/products";
+
+      async function fetchProducts(q = "") {
+        const url = new URL(apiBase, window.location.origin);
+        if (q) url.searchParams.append("q", q);
+        const res = await fetch(url);
+        const data = await res.json();
+        return data.data;
+      }
+
+      function renderProducts(products) {
+        const tbody = document.querySelector("#products-table tbody");
+        tbody.innerHTML = "";
+        for (const p of products) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+          <td>${p.product_id}</td>
+          <td>${p.product_name}</td>
+          <td>${p.description}</td>
+          <td>${p.price}</td>
+          <td>${p.stock}</td>
+          <td>${p.category_id ?? ""}</td>
+          <td>${
+            p.image_url
+              ? `<img src="${p.image_url}" alt="img" width="50" />`
+              : ""
+          }</td>
+          <td>
+            <button onclick="editProduct(${p.product_id})">Edit</button>
+            <button onclick="deleteProduct(${p.product_id})">Delete</button>
+          </td>
+        `;
+          tbody.appendChild(tr);
+        }
+      }
+
+      async function loadProducts() {
+        const q = document.getElementById("search-query").value.trim();
+        const products = await fetchProducts(q);
+        renderProducts(products);
+      }
+
+      async function editProduct(id) {
+        const res = await fetch(`${apiBase}/${id}`);
+        if (!res.ok) return alert("Product not found");
+        const p = await res.json();
+        document.getElementById("product_id").value = p.product_id;
+        document.getElementById("product_name").value = p.product_name;
+        document.getElementById("description").value = p.description;
+        document.getElementById("price").value = p.price;
+        document.getElementById("stock").value = p.stock;
+        document.getElementById("category_id").value = p.category_id ?? "";
+        document.getElementById("image_url").value = p.image_url;
+        window.scrollTo(0, 0);
+      }
+
+      async function deleteProduct(id) {
+        if (!confirm("Are you sure to delete?")) return;
+        const res = await fetch(`${apiBase}/${id}`, { method: "DELETE" });
+        if (res.ok) {
+          alert("Deleted");
+          loadProducts();
+        } else {
+          alert("Delete failed");
+        }
+      }
+
+      document
+        .getElementById("product-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const id = document.getElementById("product_id").value;
+          const payload = {
+            product_name: document.getElementById("product_name").value,
+            description: document.getElementById("description").value,
+            price: Number(document.getElementById("price").value),
+            stock: Number(document.getElementById("stock").value),
+            category_id: document.getElementById("category_id").value
+              ? Number(document.getElementById("category_id").value)
+              : null,
+            image_url: document.getElementById("image_url").value,
+          };
+
+          let res;
+          if (id) {
+            res = await fetch(`${apiBase}/${id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+          } else {
+            res = await fetch(apiBase, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+          }
+
+          if (res.ok) {
+            alert(id ? "Updated" : "Created");
+            resetForm();
+            loadProducts();
+          } else {
+            alert("Error saving product");
+          }
+        });
+
+      document.getElementById("reset-btn").addEventListener("click", resetForm);
+
+      function resetForm() {
+        document.getElementById("product-form").reset();
+        document.getElementById("product_id").value = "";
+      }
+
+      document
+        .getElementById("search-btn")
+        .addEventListener("click", loadProducts);
+
+      loadProducts();
+    </script>
+  </body>
+</html>
