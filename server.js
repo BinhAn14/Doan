@@ -11,7 +11,7 @@ const app = express();
 app.use(cors({ origin: true, credentials: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
-// NOTE: static serving is registered after the explicit root route below
+
 
 // --- Routers ---
 const productsRouter = require("./routes/products");
@@ -49,6 +49,6 @@ app.get("*", (req, res) => {
     }
 });
 
-// --- Start server ---
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));

@@ -1,36 +1,36 @@
 {
-  "name": "doan",
-  "version": "1.0.0",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
-  },
-  "dependencies": {
-    "bcrypt": "^6.0.0",
-    "body-parser": "^1.20.3",
-    "cookie-parser": "^1.4.7",
-    "cors": "^2.8.5",
-    "dotenv": "^16.6.1",
-    "express": "^4.21.2",
-    "helmet": "^8.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "morgan": "^1.10.1",
-    "mysql2": "^3.15.3"
-  },
-  "devDependencies": {
-    "nodemon": "^2.0.22"
-  },
-  "description": "",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/BinhAn14/Doan_Nhom2_Icloud.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/BinhAn14/Doan_Nhom2_Icloud/issues"
-  },
-  "homepage": "https://github.com/BinhAn14/Doan_Nhom2_Icloud#readme"
+    "name": "doan",
+    "version": "1.0.0",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js",
+        "dev": "nodemon server.js"
+    },
+    "dependencies": {
+        "bcrypt": "^6.0.0",
+        "body-parser": "^1.20.3",
+        "cookie-parser": "^1.4.7",
+        "cors": "^2.8.5",
+        "dotenv": "^16.6.1",
+        "express": "^4.21.2",
+        "helmet": "^8.1.0",
+        "jsonwebtoken": "^9.0.2",
+        "morgan": "^1.10.1",
+        "mysql2": "^3.15.3"
+    },
+    "devDependencies": {
+        "nodemon": "^2.0.22"
+    },
+    "description": "",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/BinhAn14/Doan_Nhom2_Icloud.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/BinhAn14/Doan_Nhom2_Icloud/issues"
+    },
+    "homepage": "https://github.com/BinhAn14/Doan_Nhom2_Icloud#readme"
 }
